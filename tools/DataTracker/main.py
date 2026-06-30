@@ -8,7 +8,7 @@ from match_detail_fetcher import fetch_match_details
 
 #おれ　1032997637
 #たへー　693888859
-PLAYER_ID = "693888859"
+PLAYER_ID = "1032997637"
 SEASON = 17
 
 
