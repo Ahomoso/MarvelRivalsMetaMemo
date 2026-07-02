@@ -1,0 +1,13 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Local virtualenvs and IDE metadata
+venv/
+.idea/
+
+# Generated / local data
+db_src/*.db
+data/matches/
+data/*.json
+

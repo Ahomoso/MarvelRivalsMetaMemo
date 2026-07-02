@@ -1,0 +1,14 @@
+{
+  "app_name": "MR Data Tracker",
+  "launcher_title": "MR Data Tracker Launcher",
+  "collector_title": "MR Data Tracker - Collector",
+  "viewer_title": "MR Data Tracker - Viewer",
+  "database_path": "db_src/marvel_rivals.db",
+  "default_player_uid": "1032997637",
+  "season": 17,
+  "chrome_path": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "chrome_debug_port": 9222,
+  "chrome_user_data_dir": "C:\\chrome-debug",
+  "data_dir": "data",
+  "debug_mode": false
+}

@@ -1,136 +1,79 @@
 import subprocess
+import sys
+from pathlib import Path
 import tkinter as tk
 from tkinter import messagebox
 
-from browser_driver import create_driver
-from match_uid_fetcher import fetch_match_uids
-from match_detail_fetcher import fetch_match_details
-
-#おれ　1032997637
-#たへー　693888859
-PLAYER_ID = "1032997637"
-SEASON = 17
+from collector.collector_app import CollectorApp
+from config import load_config
 
 
-class MRDataTrackerApp:
+BASE_DIR = Path(__file__).resolve().parent
+
+
+class LauncherApp:
     def __init__(self, root):
+        self.config = load_config()
         self.root = root
-        self.root.title("MR Data Tracker")
-        self.root.geometry("420x320")
+        self.root.title(self.config.launcher_title)
+        self.root.geometry("360x240")
+        self.root.resizable(False, False)
 
-        self.driver = None
-
-        self.status = tk.StringVar()
-        self.status.set("待機中")
-
-        tk.Label(root, text="MR Data Tracker", font=("Meiryo", 14)).pack(pady=10)
+        tk.Label(root, text=self.config.app_name, font=("Meiryo", 14)).pack(pady=12)
+        tk.Label(root, text="起動する機能を選択してください", font=("Meiryo", 10)).pack(pady=4)
 
         tk.Button(
             root,
-            text="Chrome起動",
-            width=30,
-            command=self.on_start_chrome
-        ).pack(pady=8)
+            text="集積装置を開く",
+            width=24,
+            command=self.open_collector,
+        ).pack(pady=10)
 
         tk.Button(
             root,
-            text="match_uid取得",
-            width=30,
-            command=self.on_fetch_match_uids
-        ).pack(pady=8)
-
-        tk.Button(
-            root,
-            text="詳細取得",
-            width=30,
-            command=self.on_fetch_match_details
-        ).pack(pady=8)
-
-        tk.Label(root, textvariable=self.status, fg="blue").pack(pady=10)
+            text="ビュワーを開く",
+            width=24,
+            command=self.open_viewer,
+        ).pack(pady=6)
 
         tk.Button(
             root,
             text="終了",
-            width=30,
-            command=self.on_close
-        ).pack(pady=8)
+            width=24,
+            command=self.root.destroy,
+        ).pack(pady=18)
 
+        tk.Button(
+            root,
+            text="設定を開く",
+            width=24,
+            command=self.open_config,
+        ).pack(pady=2)
 
-    def get_driver(self):
-        if self.driver is None:
-            self.status.set("Chromeへ接続中...")
-            self.root.update()
-            self.driver = create_driver()
+    def _open_child(self, factory, title):
+        window = tk.Toplevel(self.root)
+        window.title(title)
+        factory(window)
+        window.transient(self.root)
+        window.grab_set()
 
-        return self.driver
+    def open_collector(self):
+        # Collector is Tk-based, so it can live as a child window in this process.
+        self._open_child(CollectorApp, self.config.collector_title)
 
-    def on_fetch_match_uids(self):
-        try:
-            self.status.set("match_uid取得中...")
-            self.root.update()
+    def open_viewer(self):
+        # Viewer uses a Qt event loop, so it is launched in a separate process.
+        subprocess.Popen([sys.executable, "-m", "viewer.viewer_app"], cwd=str(BASE_DIR))
 
-            driver = self.get_driver()
-            match_uids = fetch_match_uids(driver, PLAYER_ID, SEASON)
-
-            self.status.set(f"match_uid取得完了: {len(match_uids)}件")
-            messagebox.showinfo("完了", f"match_uidを{len(match_uids)}件取得しました。")
-
-        except Exception as e:
-            self.status.set("エラー")
-            messagebox.showerror("エラー", str(e))
-
-    def on_fetch_match_details(self):
-        try:
-            self.status.set("詳細取得中...")
-            self.root.update()
-
-            driver = self.get_driver()
-            saved = fetch_match_details(driver)
-
-            self.status.set(f"詳細取得完了: {saved}件保存")
-            messagebox.showinfo("完了", f"詳細を{saved}件保存しました。")
-
-        except Exception as e:
-            self.status.set("エラー")
-            messagebox.showerror("エラー", str(e))
-
-    def on_close(self):
-        try:
-            if self.driver:
-                self.driver.close()
-        finally:
-            self.root.destroy()
-
-    def on_start_chrome(self):
-        try:
-            chrome_path = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
-
-            subprocess.Popen([
-                chrome_path,
-                "--remote-debugging-port=9222",
-                "--user-data-dir=C:\\chrome-debug"
-            ])
-
-            self.status.set("Chromeを起動しました")
-            messagebox.showinfo(
-                "完了",
-                "Chromeをリモートデバッグモードで起動しました。"
-            )
-
-        except FileNotFoundError:
-            messagebox.showerror(
-                "エラー",
-                "Chromeが見つかりません。"
-            )
-
-        except Exception as ex:
-            messagebox.showerror(
-                "エラー",
-                str(ex)
-            )
+    def open_config(self):
+        config_path = BASE_DIR / "app_config.json"
+        if not config_path.exists():
+            messagebox.showerror("エラー", f"設定ファイルが見つかりません: {config_path}")
+            return
+        subprocess.Popen(["explorer", str(config_path)])
 
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = MRDataTrackerApp(root)
+    LauncherApp(root)
     root.mainloop()
